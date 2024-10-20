@@ -1,8 +1,11 @@
 package com.test.test1.filter;
 
+import com.test.test1.wrapper.CharResponseWrapper;
 import jakarta.servlet.*;
-
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 public class AuthenticationFilter implements Filter {
     @Override
@@ -13,12 +16,28 @@ public class AuthenticationFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        System.out.println("AuthenticationFilter: Checking authentication");
+        // 요청 데이터를 읽음
+        String requestData = request.getParameter("body");
+        System.out.println("Request data: " + requestData); // 요청 데이터 출력 (예: 클라이언트가 보낸 'body' 파라미터)
 
-        // 실제 인증 로직을 여기에 추가 만약 문제가 있다면 여기서 처리가능
+        // 응답을 수정하기 위해 response를 래핑
+        CharResponseWrapper wrappedResponse = new CharResponseWrapper((HttpServletResponse) response);
 
-        chain.doFilter(request,response);
-        System.out.println("AuthenticationFilter: Response is being filtered");
+        // 다음 필터 또는 서블릿(컨트롤러) 호출
+        chain.doFilter(request, wrappedResponse);
+
+        // 원래 응답 데이터를 가져옴
+        String originalResponseContent = wrappedResponse.getCapturedResponse();
+        System.out.println("Original Response: " + originalResponseContent);
+
+        // 응답 데이터를 수정 (예: 응답 본문에 요청 데이터를 추가)
+        String modifiedResponseContent = originalResponseContent + "\nModified response with request data: " + requestData;
+
+        // 수정된 응답을 클라이언트에게 전송
+        response.setContentLength(modifiedResponseContent.length());
+
+        response.getWriter().write(modifiedResponseContent);
+
     }
 
     @Override
